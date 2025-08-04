@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Agents - NetSentry</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .agent-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .note {
+            background: #fffde7;
+            padding: 15px;
+            border-left: 4px solid #ffd600;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download Agents</h1>
+        
+        <p>Download pre-configured agents for your devices. The agents will automatically connect to this server at <strong>{{ server_ip }}</strong>.</p>
+        
+        <div class="note">
+            <strong>Note:</strong> After downloading, make the Linux agent executable with:<br>
+            <code>chmod +x netsentry_agent_linux.sh</code>
+        </div>
+        
+        <div class="agent-card">
+            <h2>Linux Agent</h2>
+            <p>For Linux devices (Ubuntu, Debian, CentOS, etc.)</p>
+            <p>Includes automatic installation as a system service.</p>
+            <a href="{{ url_for('download_linux_agent') }}" class="btn">Download Linux Agent</a>
+        </div>
+        
+        <div class="agent-card">
+            <h2>Windows Agent</h2>
+            <p>For Windows devices (7, 10, 11, Server)</p>
+            <p>Pre-compiled executable that runs in the background.</p>
+            <a href="{{ url_for('download_windows_agent') }}" class="btn">Download Windows Agent (.exe)</a>
+        </div>
+        
+        <div class="note">
+            <h3>Installation Instructions</h3>
+            <p><strong>Linux:</strong> Run the downloaded script as root: <code>sudo ./netsentry_agent_linux.sh</code></p>
+            <p><strong>Windows:</strong> Run the downloaded executable as Administrator.</p>
+        </div>
+    </div>
+</body>
+</html>

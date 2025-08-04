@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Details - {{ ip }} | NetSentry</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .dropdown-content.active {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .risk-critical {
+            color: #EF4444;
+            font-weight: bold;
+        }
+        .risk-high {
+            color: #F59E0B;
+            font-weight: bold;
+        }
+        .risk-medium {
+            color: #FBBF24;
+            font-weight: bold;
+        }
+        .risk-low {
+            color: #10B981;
+        }
+        .risk-none {
+            color: #9CA3AF;
+        }
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #E5E7EB;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        @media (min-width: 768px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #F3F4F6;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #9CA3AF;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-gray-900 shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center">
+                        <!-- Fixed logo positioning -->
+                        <div class="flex-shrink-0 mr-4">
+                            <img src="{{ url_for('static', filename='icon/net_logo.png') }}" 
+                                 alt="NetSentryLogo" class="h-10">
+                        </div>
+                        <nav class="hidden md:flex md:space-x-8">
+                            <a href="/" class="border-transparent text-gray-400 hover:text-yellow-400 hover:border-yellow-400 inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium">
+                                Devices
+                            </a>
+                            <a href="#" class="border-indigo-500 text-white inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium">
+                                Device Details
+                            </a>
+                        </nav>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Refresh Button -->
+                        <button class="bg-gray-700 p-2 rounded-full text-gray-300 hover:text-yellow-400 focus:outline-none" title="Refresh" onclick="refreshPage()">
+                            <i class="ri-refresh-line text-lg"></i>
+                        </button>
+        
+                        <!-- Logout Button with proper link -->
+                        <a href="{{ url_for('logout') }}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+
+        <!-- Main Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <!-- Device Header -->
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Device Details</h1>
+                    <p class="text-gray-600">{{ ip }} - {{ data.system.hostname }}</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                                    <i class="ri-cpu-line text-indigo-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">CPU Usage</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900">{{ data.performance.cpu_percent }}%</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                                    <i class="ri-database-2-line text-green-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Memory Usage</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900">{{ data.performance.memory_percent }}%</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                                    <i class="ri-hard-drive-2-line text-blue-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Disk Usage</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900">{{ data.performance.disk_usage }}%</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                                    <i class="ri-shield-star-line text-purple-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Security Score</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900">{{ results.total_score }}</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Assessment -->
+                <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div class="px-6 py-5 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900">Security Assessment</h3>
+                            <div class="flex justify-end mb-4">
+                                <form method="post" action="{{ url_for('scan_vulnerabilities') }}" id="vulnerability-scan-form">
+                                    <input type="hidden" name="ip" value="{{ ip }}">
+                                    <button type="submit" id="scan-button" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                                        <i class="ri-radar-line mr-2"></i> Scan Vulnerabilities
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4">
+                        <!-- Vulnerability Scan Progress -->
+                        <div id="vulnerability-scan-progress" class="hidden bg-gray-50 p-4 rounded-lg mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-md font-medium text-gray-700" id="vulnerability-scan-message">Scanning...</h4>
+                                <span class="text-sm text-gray-500" id="vulnerability-scan-count">0/0</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-indigo-600 h-2.5 rounded-full" id="vulnerability-scan-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        {% if results.vulnerability_results %}
+                        <div class="space-y-4">
+                            {% for software, details in results.vulnerability_results.items() %}
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <button onclick="toggleVulnerabilityDetails('{{ loop.index }}')" class="w-full px-4 py-3 bg-gray-50 text-left font-medium flex justify-between items-center">
+                                    <div>
+                                        <span class="text-gray-900">{{ software }}</span>
+                                        <span class="ml-2 px-2 py-1 text-xs rounded-full {% if details.total_found > 0 %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                            {{ details.total_found }} vulnerabilities
+                                        </span>
+                                    </div>
+                                    <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="vuln-arrow-{{ loop.index }}"></i>
+                                </button>
+                                <div id="vuln-details-{{ loop.index }}" class="hidden border-t border-gray-200">
+                                    <div class="table-container">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE ID</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS Score</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                {% if details.vulnerabilities %}
+                                                    {% for vuln in details.vulnerabilities %}
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ vuln.cve_id }}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm risk-{{ vuln.severity|lower }}">{{ vuln.severity }}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ vuln.cvss_score }} (v{{ vuln.cvss_version }})</td>
+                                                        <td class="px-6 py-4 text-sm text-gray-500">{{ vuln.description }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No vulnerabilities found for this software</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <i class="ri-shield-check-line text-gray-400 text-4xl mb-3"></i>
+                            <h4 class="text-lg font-medium text-gray-900">No vulnerability scan results</h4>
+                            <p class="mt-1 text-sm text-gray-500">Run a vulnerability scan to assess this device's security status</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- System Information Sections -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- System Information -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('system-info-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>System Information</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="system-info-arrow"></i>
+                        </button>
+                        <div id="system-info-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">Hostname</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.hostname }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">IP Address</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.ip_address }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">MAC Address</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.mac_address }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">OS</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.os }} {{ data.system.os_version }} ({{ data.system.os_release }})</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">Architecture</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.architecture }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">Processor</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.processor }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">Last Boot</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.boot_time }}</dd>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <dt class="text-sm font-medium text-gray-500">Memory</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ data.system.ram_used_gb }} GB used of {{ data.system.ram_total_gb }} GB</dd>
+                                    </div>
+                                </dl>
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-medium text-gray-500 mb-2">Disks</h4>
+                                    <div class="space-y-3">
+                                        {% for disk in data.system.disks %}
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span class="font-medium">{{ disk.device }} ({{ disk.mountpoint }})</span>
+                                                <span>{{ disk.percent_used }}% used</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-bar-fill bg-indigo-600" data-percent="{{ disk.percent_used|default(0) }}"></div>
+                                            </div>
+                                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>{{ disk.free_gb }} GB free</span>
+                                                <span>{{ disk.used_gb }} GB used of {{ disk.total_gb }} GB</span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Installed Software -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('installed-software-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Installed Software ({{ data.installed_software|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="installed-software-arrow"></i>
+                        </button>
+                        <div id="installed-software-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="installed-software">
+                                            {% for software in data.installed_software %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ software.name }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ software.version }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Running Processes -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('running-processes-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Running Processes ({{ data.processes|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="running-processes-arrow"></i>
+                        </button>
+                        <div id="running-processes-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PID</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPU</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Memory</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="running-processes">
+                                            {% for process in data.processes %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ process.pid }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ process.name }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ process.user }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ process.cpu_usage }}%</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ process.memory_usage }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Connections -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('network-connections-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Network Connections ({{ data.network_connections|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="network-connections-arrow"></i>
+                        </button>
+                        <div id="network-connections-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remote</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="network-connections">
+                                            {% for connection in data.network_connections %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ connection.protocol }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ connection.local_address }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ connection.remote_address }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ connection.status }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('users-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Users ({{ data.users|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="users-arrow"></i>
+                        </button>
+                        <div id="users-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UID</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Home</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shell</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="users">
+                                            {% for user in data.users %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.username }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.uid }}</td>
+                                                <td class="px-6 py-4 text-sm text-gray-500">{{ user.home_dir }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.shell }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Events -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('security-events-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Security Events ({{ data.security_events|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="security-events-arrow"></i>
+                        </button>
+                        <div id="security-events-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="security-events">
+                                            {% for event in data.security_events %}
+                                            <tr>
+                                                <td class="px-6 py-4 text-sm text-gray-500">{{ event }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Antivirus Status -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('antivirus-status-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Antivirus Status ({{ data.antivirus_status|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="antivirus-status-arrow"></i>
+                        </button>
+                        <div id="antivirus-status-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Process</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="antivirus-status">
+                                            {% for antivirus in data.antivirus_status %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ antivirus }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensitive Files -->
+                    <div class="bg-white shadow rounded-lg overflow-hidden">
+                        <button onclick="toggleDropdown('sensitive-files-container')" class="w-full px-6 py-4 bg-gray-50 text-left font-medium flex justify-between items-center">
+                            <span>Sensitive Files ({{ data.sensitive_files|length }})</span>
+                            <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="sensitive-files-arrow"></i>
+                        </button>
+                        <div id="sensitive-files-container" class="dropdown-content">
+                            <div class="px-6 py-4">
+                                <div class="table-container">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modified</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200" id="sensitive-files">
+                                            {% for file in data.sensitive_files %}
+                                            <tr>
+                                                <td class="px-6 py-4 text-sm text-gray-900">{{ file.path }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ file.size }} bytes</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ file.modified }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- After the network scan section, add a "Scan Services" button -->
+                <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+                    <div class="px-6 py-5 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900">Network Scan</h3>
+                            <div class="flex justify-end mb-4 space-x-3">
+                                <form method="post" action="{{ url_for('scan_network') }}">
+                                    <input type="hidden" name="ip" value="{{ ip }}">
+                                    <button type="submit" id="scan-network-button" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                                        <i class="ri-search-line mr-2"></i> Scan Network
+                                    </button>
+                                </form>
+                                {% if data.network_scan and data.network_scan.ports %}
+                                <form method="post" action="{{ url_for('scan_service_vulnerabilities') }}">
+                                    <input type="hidden" name="ip" value="{{ ip }}">
+                                    <button type="submit" id="scan-services-button" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                                        <i class="ri-shield-keyhole-line mr-2"></i> Scan Services
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4">
+                        <!-- Network Scan Progress -->
+                        <div id="network-scan-progress" class="hidden bg-gray-50 p-4 rounded-lg mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-md font-medium text-gray-700" id="network-scan-message">Scanning...</h4>
+                                <span class="text-sm text-gray-500" id="network-scan-count">0/100</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-indigo-600 h-2.5 rounded-full" id="network-scan-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Service Vulnerability Results Display -->
+                        {% if data.network_scan and data.network_scan.service_vulnerabilities %}
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-700 mb-3">Service Vulnerabilities</h4>
+                            <div class="space-y-4">
+                                {% for service, details in data.network_scan.service_vulnerabilities.items() %}
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <button onclick="toggleServiceDetails('{{ loop.index }}')" class="w-full px-4 py-3 bg-gray-50 text-left font-medium flex justify-between items-center">
+                                        <div>
+                                            <span class="text-gray-900">{{ service }}</span>
+                                            <span class="ml-2 px-2 py-1 text-xs rounded-full {% if details.total_found > 0 %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                                {{ details.total_found }} vulnerabilities
+                                            </span>
+                                        </div>
+                                        <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200" id="service-arrow-{{ loop.index }}"></i>
+                                    </button>
+                                    <div id="service-details-{{ loop.index }}" class="hidden border-t border-gray-200">
+                                        <div class="table-container">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE ID</th>
+                                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS Score</th>
+                                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white divide-y divide-gray-200">
+                                                    {% if details.vulnerabilities %}
+                                                        {% for vuln in details.vulnerabilities %}
+                                                        <tr>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ vuln.cve_id }}</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm risk-{{ vuln.severity|lower }}">{{ vuln.severity }}</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ vuln.cvss_score }} (v{{ vuln.cvss_version }})</td>
+                                                            <td class="px-6 py-4 text-sm text-gray-500">{{ vuln.description }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No vulnerabilities found for this service</td>
+                                                        </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Network Ports Display (existing code) -->
+                        {% if data.network_scan and data.network_scan.ports %}
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-700 mb-3">Network Ports and Services</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for port in data.network_scan.ports %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ port.port }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ port.state }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ port.name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ port.product }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ port.version }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <i class="ri-radar-line text-gray-400 text-4xl mb-3"></i>
+                            <h4 class="text-lg font-medium text-gray-900">No network scan results</h4>
+                            <p class="mt-1 text-sm text-gray-500">Run a network scan to discover open ports and services</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Toggle dropdown sections
+        function toggleDropdown(id) {
+            const content = document.getElementById(id);
+            const arrow = document.getElementById(id.replace('-container', '-arrow'));
+            
+            content.classList.toggle('active');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Toggle vulnerability details
+        function toggleVulnerabilityDetails(id) {
+            const details = document.getElementById('vuln-details-' + id);
+            const arrow = document.getElementById('vuln-arrow-' + id);
+            
+            details.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Toggle service vulnerability details
+        function toggleServiceDetails(id) {
+            const details = document.getElementById('service-details-' + id);
+            const arrow = document.getElementById('service-arrow-' + id);
+            
+            details.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Refresh the page
+        function refreshPage() {
+            location.reload();
+        }
+
+        // Cache optimization with forced update when agent sends new data
+        let cache = {};
+        function fetchDataWithCache(url, callback) {
+            fetch(url, { cache: "no-store" }) // Disable browser cache
+                .then(response => response.json())
+                .then(data => {
+                    if (JSON.stringify(data) !== JSON.stringify(cache)) {
+                        cache = data; // Update cache
+                        callback(data); // Update UI with new data
+                    }
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Update tables with new data
+        function updateTable(tableId, data, keys) {
+            const tableBody = document.getElementById(tableId);
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = ''; // Clear existing rows
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = keys.map(key => {
+                    const value = item[key] || '';
+                    return `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${value}</td>`;
+                }).join('');
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Ensure the data is updated dynamically every 10 seconds
+        function updateData() {
+            const deviceIp = window.location.pathname.split('/')[2];
+            fetchDataWithCache(`/device/${deviceIp}`, data => {
+                // Update tables with new data
+                updateTable('system-info', data.system, ['os', 'processor']);
+                updateTable('installed-software', data.installed_software, ['name', 'version']);
+                updateTable('running-processes', data.processes, ['pid', 'name', 'user', 'status', 'cpu_usage', 'memory_usage', 'command_line']);
+                updateTable('network-connections', data.network_connections, ['protocol', 'local_address', 'remote_address', 'status', 'pid']);
+                updateTable('users', data.users, ['username', 'uid', 'gid', 'home_dir', 'shell']);
+                updateTable('security-events', data.security_events.map(e => ({ event: e })), ['event']);
+                updateTable('antivirus-status', data.antivirus_status.map(e => ({ antivirus: e })), ['antivirus']);
+                updateTable('sensitive-files', data.sensitive_files, ['path', 'size', 'modified', 'accessed']);
+
+                // Update performance metrics
+                document.querySelectorAll('.progress-bar-fill').forEach((bar, index) => {
+                    if (data.system.disks && data.system.disks[index]) {
+                        bar.style.width = `${data.system.disks[index].percent_used}%`;
+                    }
+                });
+
+                // Update Security Score if available
+                if (data.vulnerability_scan && data.vulnerability_scan.results) {
+                    updateSecurityScore(data.vulnerability_scan.results);
+                }
+            });
+            setTimeout(updateData, 10000); // Update every 10 seconds
+        }
+
+        // Extract security score calculation to a separate function
+        function updateSecurityScore(results) {
+            let totalScore = 0;
+            Object.values(results).forEach(software => {
+                if (software.vulnerabilities) {
+                    software.vulnerabilities.forEach(vuln => {
+                        totalScore += vuln.cvss_score || 0;
+                    });
+                }
+            });
+            
+            const securityScoreElement = document.querySelector('.text-2xl.font-semibold.text-gray-900');
+            if (securityScoreElement) {
+                securityScoreElement.textContent = totalScore.toFixed(1);
+            }
+        }
+
+        // Global variable to track active scans
+        let activeScan = null;
+
+        // Unified function to handle all types of scans
+        function handleScan(scanType) {
+            // If there's already an active scan, show an error and return
+            if (activeScan) {
+                alert(`Please wait for the current ${activeScan} scan to complete before starting another scan.`);
+                return;
+            }
+
+            // Set this as the active scan
+            activeScan = scanType;
+            
+            // Define scan-specific elements and URLs
+            const scanConfig = {
+                'vulnerability': {
+                    progressId: 'vulnerability-scan-progress',
+                    buttonId: 'scan-button',
+                    url: '/scan_vulnerabilities',
+                    iconClass: 'ri-radar-line',
+                    messageId: 'vulnerability-scan-message',
+                    countId: 'vulnerability-scan-count',
+                    barId: 'vulnerability-scan-progress-bar',
+                    resultsContainerId: 'vulnerability-results-container',
+                    noResultsId: 'vulnerability-no-results'
+                },
+                'network': {
+                    progressId: 'network-scan-progress',
+                    buttonId: 'scan-network-button',
+                    url: '/scan_network',
+                    iconClass: 'ri-search-line',
+                    messageId: 'network-scan-message',
+                    countId: 'network-scan-count',
+                    barId: 'network-scan-progress-bar',
+                    resultsContainerId: null,
+                    noResultsId: null
+                },
+                'service': {
+                    progressId: 'network-scan-progress', // Service scan uses network progress UI
+                    buttonId: 'scan-services-button',
+                    url: '/scan_service_vulnerabilities',
+                    iconClass: 'ri-shield-keyhole-line',
+                    messageId: 'network-scan-message',
+                    countId: 'network-scan-count',
+                    barId: 'network-scan-progress-bar',
+                    resultsContainerId: null,
+                    noResultsId: null
+                }
+            };
+            
+            const config = scanConfig[scanType];
+            if (!config) {
+                console.error(`Invalid scan type: ${scanType}`);
+                activeScan = null;
+                return;
+            }
+            
+            // Get DOM elements
+            const progress = document.getElementById(config.progressId);
+            const button = document.getElementById(config.buttonId);
+            const messageEl = document.getElementById(config.messageId);
+            const countEl = document.getElementById(config.countId);
+            const barEl = document.getElementById(config.barId);
+            
+            // Check if required elements exist
+            if (!progress || !button) {
+                console.error(`Missing required DOM elements for ${scanType} scan`);
+                activeScan = null;
+                return;
+            }
+            
+            // For vulnerability scan, hide the "No results" message while scanning
+            if (scanType === 'vulnerability') {
+                const noResultsEl = document.getElementById('vulnerability-no-results');
+                if (noResultsEl) {
+                    noResultsEl.classList.add('hidden');
+                }
+            }
+            
+            // Show progress and disable button
+            progress.classList.remove('hidden');
+            button.disabled = true;
+            button.innerHTML = '<i class="ri-loader-4-line animate-spin mr-2"></i> Scanning...';
+            
+            // Reset progress indicators
+            if (messageEl) {
+                messageEl.textContent = `Starting ${scanType} scan...`;
+                messageEl.classList.remove('text-red-600');
+            }
+            if (countEl) countEl.textContent = '0/0';
+            if (barEl) barEl.style.width = '0%';
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('ip', '{{ ip }}');
+            
+            // Add X-Requested-With header to identify as AJAX request
+            const headers = new Headers({
+                'X-Requested-With': 'XMLHttpRequest'
+            });
+            
+            // Send scan request
+            fetch(config.url, {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            })
+            .then(response => {
+                // First check if the response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                // Try to parse as JSON, but handle non-JSON responses
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // If it's not JSON, get the text and throw an error
+                    return response.text().then(text => {
+                        console.error("Non-JSON response:", text);
+                        throw new Error('Server returned non-JSON response');
+                    });
+                }
+            })
+            .then(data => {
+                if (data.status === 'accepted') {
+                    console.log(`${scanType} scan started successfully:`, data);
+                    listenForScanProgress(scanType, config);
+                } else {
+                    throw new Error(data.message || 'Unknown error starting scan');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting scan:', error);
+                
+                // Show error message and reset UI
+                if (messageEl) {
+                    // More user-friendly error message
+                    if (error.message.includes('<!DOCTYPE') || error.message.includes('non-JSON')) {
+                        messageEl.textContent = 'Server error. Please check console and try again.';
+                    } else {
+                        messageEl.textContent = `Error: ${error.message}`;
+                    }
+                    messageEl.classList.add('text-red-600');
+                }
+                
+                // Re-enable button with original text
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                }
+                
+                // Hide progress bar after a delay
+                if (progress) {
+                    setTimeout(() => {
+                        progress.classList.add('hidden');
+                    }, 3000);
+                }
+                
+                // Show "No results" again if this was a vulnerability scan
+                if (scanType === 'vulnerability') {
+                    const noResultsEl = document.getElementById('vulnerability-no-results');
+                    if (noResultsEl) {
+                        setTimeout(() => {
+                            noResultsEl.classList.remove('hidden');
+                        }, 3000);
+                    }
+                }
+                
+                // Clear active scan status
+                activeScan = null;
+            });
+        }
+        
+        // Listen for scan progress updates via EventSource
+        function listenForScanProgress(scanType, config) {
+            const deviceIp = '{{ ip }}';
+            let eventSource;
+            
+            try {
+                // Close any existing EventSource connections
+                if (window.activeEventSource && window.activeEventSource.readyState !== 2) {
+                    console.log("Closing existing EventSource connection");
+                    window.activeEventSource.close();
+                }
+                
+                // Create a new EventSource connection
+                eventSource = new EventSource(`/scan_progress/${deviceIp}`);
+                window.activeEventSource = eventSource;
+                console.log("Created new EventSource connection");
+            } catch (e) {
+                console.error('Error creating EventSource:', e);
+                const messageEl = document.getElementById(config.messageId);
+                if (messageEl) {
+                    messageEl.textContent = 'Error connecting to server. Please try again.';
+                    messageEl.classList.add('text-red-600');
+                }
+                
+                const button = document.getElementById(config.buttonId);
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                }
+                
+                const progress = document.getElementById(config.progressId);
+                if (progress) {
+                    setTimeout(() => progress.classList.add('hidden'), 3000);
+                }
+                
+                // Show "No results" again if this was a vulnerability scan
+                if (scanType === 'vulnerability') {
+                    const noResultsEl = document.getElementById('vulnerability-no-results');
+                    if (noResultsEl) {
+                        setTimeout(() => {
+                            noResultsEl.classList.remove('hidden');
+                        }, 3000);
+                    }
+                }
+                
+                // Clear active scan status
+                activeScan = null;
+                return;
+            }
+            
+            const messageEl = document.getElementById(config.messageId);
+            const countEl = document.getElementById(config.countId);
+            const barEl = document.getElementById(config.barId);
+            const button = document.getElementById(config.buttonId);
+            const progress = document.getElementById(config.progressId);
+            
+            // Create or get live results container if this is a vulnerability scan
+            let liveResultsContainer = null;
+            if (scanType === 'vulnerability') {
+                // Create a container for live results if it doesn't exist
+                liveResultsContainer = document.getElementById('live-vulnerability-results');
+                if (!liveResultsContainer) {
+                    const noResultsEl = document.getElementById('vulnerability-no-results');
+                    if (noResultsEl) {
+                        // Hide the "no results" message
+                        noResultsEl.classList.add('hidden');
+                        
+                        // Create and insert the live results container
+                        liveResultsContainer = document.createElement('div');
+                        liveResultsContainer.id = 'live-vulnerability-results';
+                        liveResultsContainer.className = 'space-y-4';
+                        
+                        // Add a heading for live results
+                        const liveHeading = document.createElement('h4');
+                        liveHeading.className = 'text-lg font-medium text-gray-900 mt-4 mb-2';
+                        liveHeading.textContent = 'Live Scan Results';
+                        
+                        // Insert the elements
+                        const parentElement = noResultsEl.parentElement;
+                        parentElement.insertBefore(liveHeading, noResultsEl);
+                        parentElement.insertBefore(liveResultsContainer, noResultsEl);
+                    }
+                } else {
+                    // Clear existing results if container already exists
+                    liveResultsContainer.innerHTML = '';
+                }
+            }
+            
+            // Set a timeout to handle cases where the EventSource doesn't receive any messages
+            const eventTimeout = setTimeout(() => {
+                if (messageEl) {
+                    messageEl.textContent = 'Scan request timed out. Please try again.';
+                    messageEl.classList.add('text-red-600');
+                }
+                
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                }
+                
+                // Hide progress bar after a delay
+                if (progress) {
+                    setTimeout(() => progress.classList.add('hidden'), 3000);
+                }
+                
+                // Show "No results" again if this was a vulnerability scan
+                if (scanType === 'vulnerability') {
+                    const noResultsEl = document.getElementById('vulnerability-no-results');
+                    if (noResultsEl) {
+                        setTimeout(() => {
+                            noResultsEl.classList.remove('hidden');
+                        }, 3000);
+                    }
+                }
+                
+                if (eventSource && eventSource.readyState !== 2) { // 2 = CLOSED
+                    eventSource.close();
+                }
+                
+                // Clear active scan status
+                activeScan = null;
+            }, 15000); // 15 seconds timeout
+            
+            // Track which software packages we've already displayed
+            const displayedSoftware = new Set();
+            
+            eventSource.onmessage = function(event) {
+                // Clear the timeout as we received a message
+                clearTimeout(eventTimeout);
+                
+                try {
+                    console.log(`[${scanType}] Received event:`, event.data);
+                    const data = JSON.parse(event.data);
+                    
+                    // Check if this message is for our scan type
+                    let isRelevantMessage = false;
+                    
+                    if (data.type) {
+                        // If type is specified, match it with our scan type
+                        if (scanType === 'vulnerability' && data.type === 'vulnerability_scan') {
+                            isRelevantMessage = true;
+                        } else if (scanType === 'network' && data.type === 'network_scan') {
+                            isRelevantMessage = true;
+                        } else if (scanType === 'service' && data.type === 'service_scan') {
+                            isRelevantMessage = true;
+                        }
+                    } else {
+                        // If type is not specified, use the message content to guess the scan type
+                        if (data.message) {
+                            const msg = data.message.toLowerCase();
+                            if (scanType === 'vulnerability' && (msg.includes('vulnerabilit') || msg.includes('cve'))) {
+                                isRelevantMessage = true;
+                            } else if (scanType === 'network' && (msg.includes('port') || msg.includes('network'))) {
+                                isRelevantMessage = true;
+                            } else if (scanType === 'service' && (msg.includes('service'))) {
+                                isRelevantMessage = true;
+                            } else {
+                                // If we can't determine from the message, assume it's relevant
+                                isRelevantMessage = true;
+                            }
+                        } else {
+                            // If there's no message or type, consider it relevant (default behavior)
+                            isRelevantMessage = true;
+                        }
+                    }
+                    
+                    if (!isRelevantMessage) {
+                        console.log(`Ignoring event: not relevant for ${scanType} scan`);
+                        return; // Skip updates for other scan types
+                    }
+                    
+                    // Handle different status updates
+                    switch (data.status) {
+                        case 'in_progress':
+                            // Update progress message and bar
+                            if (messageEl && data.message) {
+                                messageEl.textContent = data.message;
+                            }
+                            
+                            if (countEl && barEl) {
+                                if (data.total > 0) {
+                                    const percent = Math.floor((data.completed / data.total) * 100);
+                                    countEl.textContent = `${data.completed}/${data.total}`;
+                                    barEl.style.width = `${percent}%`;
+                                } else if (data.completed !== undefined) {
+                                    countEl.textContent = `${data.completed}/100`;
+                                    barEl.style.width = `${data.completed}%`;
+                                }
+                            }
+                            
+                            // For vulnerability scan, update live results if we have any
+                            if (scanType === 'vulnerability' && liveResultsContainer && data.results && data.results.length > 0) {
+                                // Process the latest detected vulnerabilities
+                                data.results.forEach(resultItem => {
+                                    // Each item in results is an object with one key (the software name)
+                                    for (const softwareName in resultItem) {
+                                        // Skip if we've already displayed this software
+                                        if (displayedSoftware.has(softwareName)) continue;
+                                        
+                                        // Mark this software as displayed
+                                        displayedSoftware.add(softwareName);
+                                        
+                                        const softwareData = resultItem[softwareName];
+                                        const vulnerabilities = softwareData.vulnerabilities || [];
+                                        
+                                        // Only show software with vulnerabilities
+                                        if (softwareData.total_found > 0) {
+                                            // Create a collapsible card for this software
+                                            const softwareCard = document.createElement('div');
+                                            softwareCard.className = 'border border-gray-200 rounded-lg overflow-hidden mb-4 shadow-sm hover:shadow-md transition-shadow duration-200';
+                                            
+                                            // Get the highest severity for visual indication
+                                            let highestSeverity = 'none';
+                                            const severityRank = {
+                                                'critical': 5, 
+                                                'high': 4, 
+                                                'medium': 3, 
+                                                'low': 2, 
+                                                'none': 1,
+                                                'unknown': 0
+                                            };
+                                            
+                                            let highestRank = 0;
+                                            vulnerabilities.forEach(vuln => {
+                                                const severity = vuln.severity.toLowerCase();
+                                                const rank = severityRank[severity] || 0;
+                                                if (rank > highestRank) {
+                                                    highestRank = rank;
+                                                    highestSeverity = severity;
+                                                }
+                                            });
+                                            
+                                            // Set border color based on highest severity
+                                            const borderColors = {
+                                                'critical': 'border-red-500',
+                                                'high': 'border-orange-500',
+                                                'medium': 'border-yellow-500',
+                                                'low': 'border-green-500',
+                                                'none': 'border-gray-300',
+                                                'unknown': 'border-gray-300'
+                                            };
+                                            
+                                            softwareCard.classList.add(borderColors[highestSeverity] || 'border-gray-300');
+                                            softwareCard.classList.add('border-l-4');
+                                            
+                                            // Create the header button with severity indicator
+                                            const headerButton = document.createElement('button');
+                                            headerButton.className = 'w-full px-4 py-3 bg-gray-50 text-left font-medium flex justify-between items-center';
+                                            
+                                            // Badge colors based on severity
+                                            const badgeColors = {
+                                                'critical': 'bg-red-100 text-red-800',
+                                                'high': 'bg-orange-100 text-orange-800',
+                                                'medium': 'bg-yellow-100 text-yellow-800',
+                                                'low': 'bg-green-100 text-green-800',
+                                                'none': 'bg-gray-100 text-gray-800',
+                                                'unknown': 'bg-gray-100 text-gray-800'
+                                            };
+                                            
+                                            const badgeColor = badgeColors[highestSeverity] || 'bg-gray-100 text-gray-800';
+                                            
+                                            headerButton.innerHTML = `
+                                                <div class="flex items-center">
+                                                    <span class="text-gray-900 font-semibold">${softwareName}</span>
+                                                    <span class="ml-2 px-2 py-1 text-xs rounded-full ${badgeColor}">
+                                                        ${softwareData.total_found} vulnerabilities
+                                                    </span>
+                                                    <span class="ml-2 px-2 py-1 text-xs rounded-full ${badgeColor}">
+                                                        Highest: ${highestSeverity.charAt(0).toUpperCase() + highestSeverity.slice(1)}
+                                                    </span>
+                                                </div>
+                                                <i class="ri-arrow-down-s-line text-gray-500 transform transition-transform duration-200"></i>
+                                            `;
+                                            
+                                            // Generate a unique ID for this software section
+                                            const uniqueId = 'live-vuln-' + (Math.random().toString(36).substring(2, 9));
+                                            headerButton.setAttribute('onclick', `toggleLiveVulnDetails('${uniqueId}')`);
+                                            
+                                            // Create the details container
+                                            const detailsContainer = document.createElement('div');
+                                            detailsContainer.id = uniqueId;
+                                            detailsContainer.className = 'hidden border-t border-gray-200';
+                                            
+                                            // Create a table for vulnerabilities with severity indicators
+                                            const tableHTML = `
+                                                <div class="table-container">
+                                                    <table class="min-w-full divide-y divide-gray-200">
+                                                        <thead class="bg-gray-50">
+                                                            <tr>
+                                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE ID</th>
+                                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS Score</th>
+                                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="bg-white divide-y divide-gray-200">
+                                                            ${vulnerabilities.map(vuln => {
+                                                                const severity = vuln.severity.toLowerCase();
+                                                                const severityClass = `risk-${severity}`;
+                                                                
+                                                                // Add severity indicator pill
+                                                                const pillColor = badgeColors[severity] || 'bg-gray-100 text-gray-800';
+                                                                const severityPill = `<span class="px-2 py-1 text-xs rounded-full ${pillColor}">${vuln.severity}</span>`;
+                                                                
+                                                                return `
+                                                                    <tr class="hover:bg-gray-50">
+                                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="text-blue-600 hover:underline">
+                                                                                ${vuln.cve_id}
+                                                                                <i class="ri-external-link-line text-xs ml-1"></i>
+                                                                            </a>
+                                                                        </td>
+                                                                        <td class="px-6 py-4 whitespace-nowrap text-sm">${severityPill}</td>
+                                                                        <td class="px-6 py-4 whitespace-nowrap text-sm ${severityClass}">${vuln.cvss_score || 'N/A'} ${vuln.cvss_version ? `(v${vuln.cvss_version})` : ''}</td>
+                                                                        <td class="px-6 py-4 text-sm text-gray-500">${vuln.description}</td>
+                                                                    </tr>
+                                                                `;
+                                                            }).join('')}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            `;
+                                            detailsContainer.innerHTML = tableHTML;
+                                            
+                                            // Assemble the card
+                                            softwareCard.appendChild(headerButton);
+                                            softwareCard.appendChild(detailsContainer);
+                                            
+                                            // Add the card to the container
+                                            liveResultsContainer.appendChild(softwareCard);
+                                        }
+                                    }
+                                });
+                            }
+                            break;
+                            
+                        case 'completed':
+                            if (messageEl) {
+                                messageEl.textContent = data.message || 'Scan completed successfully';
+                            }
+                            
+                            if (barEl) {
+                                barEl.style.width = '100%';
+                            }
+                            
+                            // Update security score dynamically if available
+                            if (data.total_score !== undefined) {
+                                const securityScoreElement = document.querySelector('.text-2xl.font-semibold.text-gray-900');
+                                if (securityScoreElement) {
+                                    securityScoreElement.textContent = data.total_score.toFixed(1);
+                                }
+                            }
+                            
+                            // Clear active scan status
+                            activeScan = null;
+                            
+                            // Refresh page after a delay
+                            setTimeout(() => location.reload(), 3000);
+                            
+                            if (eventSource && eventSource.readyState !== 2) {
+                                eventSource.close();
+                            }
+                            break;
+                            
+                        case 'error':
+                            if (messageEl) {
+                                messageEl.textContent = data.message || 'Error during scan';
+                                messageEl.classList.add('text-red-600');
+                            }
+                            
+                            // Re-enable button with original text
+                            if (button) {
+                                button.disabled = false;
+                                button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                            }
+                            
+                            // Hide progress bar after a delay
+                            if (progress) {
+                                setTimeout(() => progress.classList.add('hidden'), 3000);
+                            }
+                            
+                            // Show "No results" again if this was a vulnerability scan
+                            if (scanType === 'vulnerability') {
+                                const noResultsEl = document.getElementById('vulnerability-no-results');
+                                if (noResultsEl) {
+                                    setTimeout(() => {
+                                        noResultsEl.classList.remove('hidden');
+                                    }, 3000);
+                                }
+                            }
+                            
+                            // Clear active scan status
+                            activeScan = null;
+                            
+                            if (eventSource && eventSource.readyState !== 2) {
+                                eventSource.close();
+                            }
+                            break;
+                            
+                        case 'stream_closed':
+                            // Clear active scan status
+                            activeScan = null;
+                            
+                            if (eventSource && eventSource.readyState !== 2) {
+                                eventSource.close();
+                            }
+                            break;
+                    }
+                } catch (e) {
+                    console.error('Error parsing event data:', e);
+                    
+                    if (messageEl) {
+                        messageEl.textContent = 'Error processing scan updates';
+                        messageEl.classList.add('text-red-600');
+                    }
+                    
+                    // Re-enable button
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                    }
+                    
+                    // Hide progress bar after a delay
+                    if (progress) {
+                        setTimeout(() => progress.classList.add('hidden'), 3000);
+                    }
+                    
+                    // Show "No results" again if this was a vulnerability scan
+                    if (scanType === 'vulnerability') {
+                        const noResultsEl = document.getElementById('vulnerability-no-results');
+                        if (noResultsEl) {
+                            setTimeout(() => {
+                                noResultsEl.classList.remove('hidden');
+                            }, 3000);
+                        }
+                    }
+                    
+                    // Clear active scan status
+                    activeScan = null;
+                    
+                    if (eventSource && eventSource.readyState !== 2) {
+                        eventSource.close();
+                    }
+                }
+            };
+            
+            eventSource.onerror = function() {
+                // Clear the timeout as we received an error event
+                clearTimeout(eventTimeout);
+                
+                console.error('EventSource connection failed');
+                if (messageEl) {
+                    messageEl.textContent = 'Connection to server lost. Please try again.';
+                    messageEl.classList.add('text-red-600');
+                }
+                
+                // Re-enable button with original text
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = `<i class="${config.iconClass} mr-2"></i> Scan ${scanType.charAt(0).toUpperCase() + scanType.slice(1)}`;
+                }
+                
+                // Hide progress bar after a delay
+                if (progress) {
+                    setTimeout(() => progress.classList.add('hidden'), 3000);
+                }
+                
+                // Show "No results" again if this was a vulnerability scan
+                if (scanType === 'vulnerability') {
+                    const noResultsEl = document.getElementById('vulnerability-no-results');
+                    if (noResultsEl) {
+                        setTimeout(() => {
+                            noResultsEl.classList.remove('hidden');
+                        }, 3000);
+                    }
+                }
+                
+                // Clear active scan status
+                activeScan = null;
+                
+                if (eventSource && eventSource.readyState !== 2) {
+                    eventSource.close();
+                }
+            };
+        }
+
+        // Add a function to toggle live vulnerability details
+        function toggleLiveVulnDetails(id) {
+            const details = document.getElementById(id);
+            const button = details.previousElementSibling;
+            const arrow = button.querySelector('i');
+            
+            details.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store active EventSource globally
+            window.activeEventSource = null;
+            
+            // Add ID to the "No vulnerability scan results" container for easy reference
+            const vulnResultsSection = document.querySelector('.px-6.py-4');
+            if (vulnResultsSection) {
+                const noResultsDiv = vulnResultsSection.querySelector('.text-center.py-8');
+                if (noResultsDiv) {
+                    noResultsDiv.id = 'vulnerability-no-results';
+                }
+            }
+            
+            // Initialize progress bars
+            document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+                const percent = bar.getAttribute('data-percent') || 0;
+                bar.style.width = `${percent}%`;
+            });
+            
+            // Add service scan progress element if it doesn't exist
+            // This is needed because service scan uses network scan UI elements
+            if (document.getElementById('scan-services-button') && 
+                !document.getElementById('service-scan-progress')) {
+                console.log("Service scan will use network scan progress UI");
+            }
+            
+            // Setup form submit handlers using event delegation to avoid duplicates
+            document.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                const form = e.target;
+                
+                // Check which form is being submitted
+                if (form.id === 'vulnerability-scan-form') {
+                    handleScan('vulnerability');
+                } else if (form.action && form.action.includes('scan_network')) {
+                    handleScan('network');
+                } else if (form.action && form.action.includes('scan_service_vulnerabilities')) {
+                    handleScan('service');
+                } else {
+                    // If it's not one of our scan forms, allow normal submission
+                    form.submit();
+                }
+            });
+            
+            // Start data updates
+            updateData();
+            
+            // Check for ongoing scans
+            checkForOngoingScans();
+        });
+        
+        // Function to check and handle ongoing scans when page loads
+        function checkForOngoingScans() {
+            const deviceIp = window.location.pathname.split('/')[2];
+            if (!deviceIp) return;
+            
+            let eventSource;
+            try {
+                eventSource = new EventSource(`/scan_progress/${deviceIp}`);
+                window.activeEventSource = eventSource;
+            } catch (e) {
+                console.error('Error creating EventSource for ongoing scans:', e);
+                return;
+            }
+            
+            // Set a timeout to close the event source if no messages are received
+            const checkTimeout = setTimeout(() => {
+                if (eventSource && eventSource.readyState !== 2) {
+                    eventSource.close();
+                }
+            }, 3000);
+            
+            eventSource.onmessage = function(event) {
+                // Clear the timeout as we received a message
+                clearTimeout(checkTimeout);
+                
+                try {
+                    console.log("Checking for ongoing scans:", event.data);
+                    const data = JSON.parse(event.data);
+                    
+                    // Make sure this is a scan in progress
+                    if (data.status !== 'in_progress') {
+                        if (data.status === 'stream_closed') {
+                            eventSource.close();
+                        }
+                        return;
+                    }
+                    
+                    // Determine scan type and config from data
+                    let scanType, config;
+                    
+                    if (data.type === 'vulnerability_scan') {
+                        scanType = 'vulnerability';
+                        config = {
+                            progressId: 'vulnerability-scan-progress',
+                            buttonId: 'scan-button',
+                            iconClass: 'ri-radar-line',
+                            messageId: 'vulnerability-scan-message',
+                            countId: 'vulnerability-scan-count',
+                            barId: 'vulnerability-scan-progress-bar'
+                        };
+                        
+                        // Hide the "No vulnerability scan results" message 
+                        const noResultsEl = document.getElementById('vulnerability-no-results');
+                        if (noResultsEl) {
+                            noResultsEl.classList.add('hidden');
+                        }
+                    } else if (data.type === 'network_scan') {
+                        scanType = 'network';
+                        config = {
+                            progressId: 'network-scan-progress',
+                            buttonId: 'scan-network-button',
+                            iconClass: 'ri-search-line',
+                            messageId: 'network-scan-message',
+                            countId: 'network-scan-count',
+                            barId: 'network-scan-progress-bar'
+                        };
+                    } else if (data.type === 'service_scan') {
+                        scanType = 'service';
+                        config = {
+                            progressId: 'network-scan-progress', // Service scan uses network progress UI
+                            buttonId: 'scan-services-button',
+                            iconClass: 'ri-shield-keyhole-line',
+                            messageId: 'network-scan-message',
+                            countId: 'network-scan-count',
+                            barId: 'network-scan-progress-bar'
+                        };
+                    } else {
+                        // If type is not specified, try to guess from message
+                        console.log("No scan type specified, guessing from message:", data.message);
+                        
+                        // Default to vulnerability scan if we can't determine
+                        scanType = 'vulnerability';
+                        config = {
+                            progressId: 'vulnerability-scan-progress',
+                            buttonId: 'scan-button',
+                            iconClass: 'ri-radar-line',
+                            messageId: 'vulnerability-scan-message',
+                            countId: 'vulnerability-scan-count',
+                            barId: 'vulnerability-scan-progress-bar'
+                        };
+                    }
+                    
+                    console.log(`Detected ongoing ${scanType} scan`);
+                    
+                    // Set this as the active scan
+                    activeScan = scanType;
+                    
+                    // Show progress UI
+                    const progressSection = document.getElementById(config.progressId);
+                    if (progressSection) {
+                        progressSection.classList.remove('hidden');
+                    }
+                    
+                    // Disable button
+                    const button = document.getElementById(config.buttonId);
+                    if (button) {
+                        button.disabled = true;
+                        button.innerHTML = '<i class="ri-loader-4-line animate-spin mr-2"></i> Scanning...';
+                    }
+                    
+                    // Continue monitoring this scan with the proper config
+                    listenForScanProgress(scanType, config);
+                    
+                    // Close this initial checking event source
+                    if (eventSource && eventSource.readyState !== 2) {
+                        eventSource.close();
+                    }
+                } catch (e) {
+                    console.error('Error checking for ongoing scans:', e);
+                    if (eventSource && eventSource.readyState !== 2) {
+                        eventSource.close();
+                    }
+                }
+            };
+            
+            eventSource.onerror = function() {
+                clearTimeout(checkTimeout);
+                if (eventSource && eventSource.readyState !== 2) {
+                    eventSource.close();
+                }
+            };
+        }
+        
+    </script>
+    
+    <style>
+       
+        .border-critical, .bg-critical {
+            border-color: #DC2626 !important;
+        }
+        .border-high, .bg-high {
+            border-color: #F97316 !important;
+        }
+        .border-medium, .bg-medium {
+            border-color: #FBBF24 !important;
+        }
+        .border-low, .bg-low {
+            border-color: #10B981 !important;
+        }
+        
+        /* Animated pulse for critical vulnerabilities */
+        @keyframes pulse-red {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+            }
+        }
+        .pulse-critical {
+            animation: pulse-red 2s infinite;
+        }
+    </style>
+</body>
+</html>

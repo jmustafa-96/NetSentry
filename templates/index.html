@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetSentry - Device Monitoring</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .device-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .device-details.active {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-online {
+            background-color: #10B981;
+        }
+        .status-offline {
+            background-color: #EF4444;
+        }
+        .status-warning {
+            background-color: #F59E0B;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        @media (min-width: 768px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #F3F4F6;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #9CA3AF;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-gray-900 shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <img src="{{ url_for('static', filename='icon/net_logo.png') }}" 
+                                 alt="NetSentry Logo" class="h-10 w-auto" 
+                                 onerror="console.error('Logo not found at expected path. Check the static folder configuration and file location.')">
+                        </div>
+                        <nav class="hidden md:flex md:space-x-8 ml-6">
+                            <a href="#" class="text-white hover:text-yellow-400 text-sm font-medium">Devices</a>
+                            <a href="/network_map" class="text-gray-400 hover:text-yellow-400 text-sm font-medium">Network Map</a>
+                            <a href="/peripheral_monitor" class="text-gray-400 hover:text-yellow-400 text-sm font-medium">Peripherals</a>
+                            <a href="/download" class="text-gray-400 hover:text-yellow-400 text-sm font-medium">Download</a>
+                        </nav>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="bg-gray-700 p-2 rounded-full text-gray-300 hover:text-yellow-400 focus:outline-none" title="Refresh" onclick="refreshPage()">
+                            <i class="ri-refresh-line text-lg"></i>
+                        </button>
+                        <div class="relative">
+                            <button class="bg-gray-800 rounded-full flex text-sm focus:outline-none">
+                                <span class="sr-only">Open user menu</span>
+                                <div class="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                                    <i class="ri-user-line text-gray-900"></i>
+                                </div>
+                            </button>
+                        </div>
+                        <a href="{{ url_for('logout') }}" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition duration-200">
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Connected Devices</h1>
+                    <div class="mt-4 md:mt-0 flex space-x-3">
+                        <div class="relative">
+                            <input type="text" placeholder="Search devices..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm" id="searchInput">
+                            <div class="absolute left-3 top-2.5 text-gray-400">
+                                <i class="ri-search-line"></i>
+                            </div>
+                        </div>
+                        <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="ri-filter-line mr-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                                    <i class="ri-computer-line text-indigo-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Total Devices</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900" id="totalDevices">{% if devices %}{{ devices|length }}{% else %}0{% endif %}</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                                    <i class="ri-checkbox-circle-line text-green-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Online</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900" id="onlineDevices">0</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
+                                    <i class="ri-close-circle-line text-red-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Offline</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900" id="offlineDevices">0</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                                    <i class="ri-shield-check-line text-yellow-600 text-xl"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Agents Installed</dt>
+                                        <dd class="flex items-baseline">
+                                            <div class="text-2xl font-semibold text-gray-900" id="agentsInstalled">0</div>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device List -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="divide-y divide-gray-200">
+                        {% for device in devices %}
+                        <div class="device-item p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer" data-device-id="{{ loop.index }}" data-status="{% if device.agent_installed %}online{% else %}offline{% endif %}" data-agent-installed="{{ device.agent_installed|lower }}" data-search="{{ device.name|lower }} {{ device.ip|lower }} {{ device.mac|lower }}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center min-w-0">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                        <i class="ri-{% if device.agent_installed %}computer{% else %}smartphone{% endif %}-line text-indigo-600"></i>
+                                    </div>
+                                    <div class="ml-4 min-w-0">
+                                        <div class="flex items-center">
+                                            <p class="text-sm font-medium text-indigo-600 truncate">
+                                                {% if device.agent_installed %}
+                                                    <a href="/device/{{ device.ip }}" class="hover:underline">{{ device.name }}</a>
+                                                {% else %}
+                                                    {{ device.name }}
+                                                {% endif %}
+                                            </p>
+                                            <span class="status-indicator ml-2 {% if device.agent_installed %}status-online{% else %}status-offline{% endif %}"></span>
+                                        </div>
+                                        <p class="text-sm text-gray-500 truncate">{{ device.ip }}</p>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-shrink-0 flex items-center">
+                                    <div class="mr-4 hidden md:block">
+                                        <p class="text-sm text-gray-900">MAC: {{ device.mac }}</p>
+                                    </div>
+                                    <div class="mr-4 hidden sm:block">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if device.agent_installed %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                            {% if device.agent_installed %}Agent Installed{% else %}No Agent{% endif %}
+                                        </span>
+                                    </div>
+                                    <i class="ri-arrow-down-s-line text-gray-400 transform transition-transform duration-200 device-arrow"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Device Details (Hidden by default) -->
+                            <div class="device-details mt-4 pl-14">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider">System Info</h3>
+                                        <div class="mt-2 space-y-1">
+                                            <p class="text-sm text-gray-900"><span class="font-medium">Hostname:</span> {{ device.name }}</p>
+                                            <p class="text-sm text-gray-900"><span class="font-medium">IP:</span> {{ device.ip }}</p>
+                                            <p class="text-sm text-gray-900"><span class="font-medium">MAC:</span> {{ device.mac }}</p>
+                                            {% if device.agent_installed %}
+                                                <p class="text-sm text-gray-900"><span class="font-medium">Status:</span> <span class="text-green-600">Online</span></p>
+                                            {% else %}
+                                                <p class="text-sm text-gray-900"><span class="font-medium">Status:</span> <span class="text-red-600">Offline</span></p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Agent Status</h3>
+                                        <div class="mt-2 space-y-1">
+                                            {% if device.agent_installed %}
+                                                <p class="text-sm text-gray-900"><span class="font-medium">Version:</span> 1.2.3</p>
+                                                <p class="text-sm text-gray-900"><span class="font-medium">Last Seen:</span> Just now</p>
+                                                <p class="text-sm text-gray-900"><span class="font-medium">Uptime:</span> 2 days</p>
+                                            {% else %}
+                                                <p class="text-sm text-gray-500 italic">No agent installed</p>
+                                                <button class="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                    Install Agent
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if device.agent_installed %}
+                                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">CPU Usage</h3>
+                                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full bg-indigo-600 rounded-full" style="width: 45%"></div>
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">45% - 2.1 GHz</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Memory Usage</h3>
+                                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full bg-green-600 rounded-full" style="width: 65%"></div>
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">65% - 6.5 GB / 10 GB</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Disk Usage</h3>
+                                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full bg-yellow-600 rounded-full" style="width: 32%"></div>
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-500">32% - 320 GB / 1 TB</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Refresh the page
+        function refreshPage() {
+            location.reload();
+        }
+        
+        // Toggle device details
+        document.querySelectorAll('.device-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Don't toggle if clicking on a link or button
+                if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
+                    return;
+                }
+                
+                const details = item.querySelector('.device-details');
+                const arrow = item.querySelector('.device-arrow');
+                
+                details.classList.toggle('active');
+                arrow.classList.toggle('rotate-180');
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.device-item').forEach(item => {
+                const searchData = item.getAttribute('data-search');
+                if (searchData.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Update stats counters
+        function updateStats() {
+            const total = document.querySelectorAll('.device-item').length;
+            const online = document.querySelectorAll('.device-item[data-status="online"]').length;
+            const offline = document.querySelectorAll('.device-item[data-status="offline"]').length;
+            const withAgent = document.querySelectorAll('.device-item[data-agent-installed="true"]').length;
+            
+            document.getElementById('totalDevices').textContent = total;
+            document.getElementById('onlineDevices').textContent = online;
+            document.getElementById('offlineDevices').textContent = offline;
+            document.getElementById('agentsInstalled').textContent = withAgent;
+        }
+
+        // Initialize stats
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+        });
+
+        // Auto-refresh data every 60 seconds
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Update the device list section
+                    const currentDeviceList = document.querySelector('.divide-y.divide-gray-200');
+                    const newDeviceList = doc.querySelector('.divide-y.divide-gray-200');
+                    
+                    if (currentDeviceList && newDeviceList) {
+                        currentDeviceList.innerHTML = newDeviceList.innerHTML;
+                        
+                        // Reattach event listeners
+                        document.querySelectorAll('.device-item').forEach(item => {
+                            item.addEventListener('click', (e) => {
+                                if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
+                                    return;
+                                }
+                                
+                                const details = item.querySelector('.device-details');
+                                const arrow = item.querySelector('.device-arrow');
+                                
+                                details.classList.toggle('active');
+                                arrow.classList.toggle('rotate-180');
+                            });
+                        });
+                        
+                        // Update stats again
+                        updateStats();
+                    }
+                })
+                .catch(error => console.error('Error refreshing data:', error));
+        }, 60000); // Refresh every 60 seconds
+    </script>
+</body>
+</html>
